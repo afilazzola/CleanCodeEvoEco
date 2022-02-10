@@ -1,0 +1,35 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+### Original code chunk
+```{r eval = F}
+## Create a function to run a linear model with plant growth compared in different groups
+
+lmFun <- function(){
+m1 <- lm(weight ~ group, ## response ~ predictor
+         data = PlantGrowth) ## specify dataframe
+# shapiro.test(m1$residuals) ## check normality of response. Model = Normal
+anovaTable <- anova(m1) ## get ANOVA Table from model
+return(anovaTable)
+}
+lmFun()
+
+```
+
+### Revised Chunk
+```{r eval = F}
+
+lmComparePlantGrowth <- function(){
+m1 <- lm(weight ~ group, 
+         data = PlantGrowth)
+anovaTable <- anova(m1)
+return(anovaTable)
+}
+
+lmComparePlantGrowth()
+
+```
