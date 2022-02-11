@@ -189,17 +189,9 @@ backgr &lt;- randomPoints(samplearea, n=nbackgr, p =sp1)  %&gt;% data.frame() ##
 coordinates(backgr) &lt;- ~x+y ## re-assign as spatial points
 proj4string(backgr)  &lt;- crs(sp1) ## assign CRS
 
-## withhold 20% for sample testing
-fold.p &lt;- kfold(sp1, k=10)
-occtest.p &lt;-sp1[fold.p == 4, ]
-occtrain.p &lt;- sp1[fold.p != 4, ]
-fold.a &lt;- kfold(backgr, k=10)
-occtest.a &lt;- backgr[fold.a == 4, ]
-occtrain.a &lt;- backgr[fold.a != 4, ]
-
 ## Extract climate data
-pres &lt;- extract(climateRasters, occtrain.p)
-abs &lt;- extract(climateRasters, occtrain.a)
+pres &lt;- extract(climateRasters, sp1)
+abs &lt;- extract(climateRasters, backgr)
 allClim &lt;- rbind(pres, abs) %&gt;% data.frame()
 
 ## Check for covariance
@@ -220,11 +212,8 @@ samplearea &lt;-BufferAroundPoints(sp1, 100000)
 nbackgr &lt;- getNumberBackgrPoints(sp1)
 backgr &lt;- getBackgrPoints(samplearea, nbackgr, sp1)
 
-### Withold 10% of the data for independent validation
-partionedData &lt;- kfoldPartionData(occurrences = sp1, absences = backgr)
-
 ###### Reduce co-linearity between models
-selectedVars &lt;- FindColinearVariables(partionedData$trainingPresence,
+selectedVars &lt;- findNonCollinearVariables(partionedData$trainingPresence,
   partionedData$trainingAbsence,
   climateRasters)
 bestClimate &lt;- climateRasters[[selectedVars]] ## Use best variables without colinearity issues</code></pre>
