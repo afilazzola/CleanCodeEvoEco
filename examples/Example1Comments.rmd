@@ -1,7 +1,8 @@
 ---
-output: html_document
-editor_options: 
-  chunk_output_type: console
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
 ---
 
 

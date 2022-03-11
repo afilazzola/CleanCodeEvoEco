@@ -1,0 +1,129 @@
+---
+title: "Examples of clean code for computational biologists"
+output: html_document
+---
+
+
+![](programming.png)(https://pixabay.com/images/id-1873854/)
+
+### Example 1 - Communication
+
+#### Original code chunk
+```{r eval = F}
+## Create a function to run a linear model with plant growth compared in different groups
+
+lmFun <- function(){
+m1 <- lm(weight ~ group, ## response ~ predictor
+         data = PlantGrowth) ## specify dataframe
+# shapiro.test(m1$residuals) ## check normality of response. Model = Normal
+anovaTable <- anova(m1) ## get ANOVA Table from model
+return(anovaTable)
+}
+lmFun()
+
+```
+
+#### Revised Chunk
+```{r eval = F}
+
+lmComparePlantGrowth <- function(){
+m1 <- lm(weight ~ group, 
+         data = PlantGrowth)
+anovaTable <- anova(m1)
+return(anovaTable)
+}
+
+lmComparePlantGrowth()
+
+```
+
+### Example 1 - Formatting
+
+#### Original Script
+```{python eval = FALSE}
+headerCols = ["gbifID","datasetKey","occurrenceID","kingdom","phylum","class","species","latitude","longitude"]
+
+for i in csvFiles:
+    iter_csv = pd.read_csv(i, sep="\t",usecols=keepCols,dtype=str,names=headerCols,header=0)
+    uniqueSpp = list(set(iter_csv["species"]))
+    for j in uniqueSpp:
+        tempSpp=iter_csv[iter_csv["species"]==j]
+        out_csv='~/project/data/speciesOcc/'+str(j)+'.csv'
+        if not os.path.isfile(out_csv):
+            tempSpp.to_csv(out_csv, index=False,header=keepCols,mode='w')
+        else:
+            tempSpp.to_csv(out_csv, index=False, header=False,mode='a')
+```
+
+#### Revised Script
+```{python eval = FALSE}
+headerCols = ["gbifID", "datasetKey", "occurrenceID", "kingdom", "phylum",
+  "class", "species", "latitude", "longitude"]
+
+for i in csvFiles:
+    iter_csv = pd.read_csv(i, 
+      sep = "\t", 
+      usecols = keepCols, 
+      dtype = str, 
+      names = headerCols, 
+      header = 0)
+      
+    uniqueSpp = list(set(iter_csv["species"]))
+    
+    for j in uniqueSpp:
+        tempSpp = iter_csv[iter_csv["species"] == j]
+        
+        out_csv = '~/project/data/speciesOcc/' + str(j) + '.csv'
+        
+        if not os.path.isfile(out_csv):
+            tempSpp.to_csv(out_csv,
+              index = False,
+              header = keepCols,
+              mode = 'w')
+        else:
+            tempSpp.to_csv(out_csv, 
+              index = False, 
+              header = False,
+              mode = 'a')
+            
+```
+
+
+### Example 3 - Abstraction
+
+
+#### Original
+```{r eval = F}
+## Assign spatial coordinates
+coordinates(sp1) <- ~decimalLongitude + decimalLatitude ## Transform occurrences to spdataframe
+proj4string(sp1) <- CRS("+proj=longlat +datum=WGS84")
+sp1 <- spTransform(sp1, crs(climateRasters))
+
+## Extract climate data
+allClim <- extract(climateRasters, sp1)
+allClimDF <- data.frame(allClim)
+
+## Check for multicollinearity
+collinear <- usdm::vifcor(allClimDF[,-ncol(allClimDF)])
+selectVars <-  collinear@results$Variables
+
+colinearVariables <- climateRasters[[selectVars]]
+```
+
+#### One level of abstraction
+```{r  eval = F}
+sp1 <- assignSpatialCoordinates(sp1)
+
+allClimDF <- getClimateDataframe(sp1)
+
+selectVars <- findCollinear(allClimDF)
+
+collinearVariables <- climateRasters[[selectedVars]] 
+```
+
+
+#### Second level of abstraction
+```{r  eval = F}
+selectedVars <- findCollinearVariables(sp1, climateRasters)
+collinearVariables <- climateRasters[[selectedVars]] 
+```

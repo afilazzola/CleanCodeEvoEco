@@ -1,0 +1,53 @@
+---
+title: "Example2Formatting"
+output: html_document
+---
+
+### Original Script
+```{python eval = FALSE}
+headerCols = ["gbifID","datasetKey","occurrenceID","kingdom","phylum","class","species","latitude","longitude"]
+
+for i in csvFiles:
+    iter_csv = pd.read_csv(i, sep="\t",usecols=keepCols,dtype=str,names=headerCols,header=0)
+    uniqueSpp = list(set(iter_csv["species"]))
+    for j in uniqueSpp:
+        tempSpp=iter_csv[iter_csv["species"]==j]
+        out_csv='~/project/data/speciesOcc/'+str(j)+'.csv'
+        if not os.path.isfile(out_csv):
+            tempSpp.to_csv(out_csv, index=False,header=keepCols,mode='w')
+        else:
+            tempSpp.to_csv(out_csv, index=False, header=False,mode='a')
+```
+
+### Revised Script
+```{python eval = FALSE}
+headerCols = ["gbifID", "datasetKey", "occurrenceID", "kingdom", "phylum",
+  "class", "species", "latitude", "longitude"]
+
+for i in csvFiles:
+    iter_csv = pd.read_csv(i, 
+      sep = "\t", 
+      usecols = keepCols, 
+      dtype = str, 
+      names = headerCols, 
+      header = 0)
+      
+    uniqueSpp = list(set(iter_csv["species"]))
+    
+    for j in uniqueSpp:
+        tempSpp = iter_csv[iter_csv["species"] == j]
+        
+        out_csv = '~/project/data/speciesOcc/' + str(j) + '.csv'
+        
+        if not os.path.isfile(out_csv):
+            tempSpp.to_csv(out_csv,
+              index = False,
+              header = keepCols,
+              mode = 'w')
+        else:
+            tempSpp.to_csv(out_csv, 
+              index = False, 
+              header = False,
+              mode = 'a')
+            
+```

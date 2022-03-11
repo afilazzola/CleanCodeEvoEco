@@ -1,0 +1,45 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+## Example3abstraction
+
+
+
+### Original
+```{r eval = F}
+## Assign spatial coordinates
+coordinates(sp1) <- ~decimalLongitude + decimalLatitude ## Transform occurrences to spdataframe
+proj4string(sp1) <- CRS("+proj=longlat +datum=WGS84")
+sp1 <- spTransform(sp1, crs(climateRasters))
+
+## Extract climate data
+allClim <- extract(climateRasters, sp1)
+allClimDF <- data.frame(allClim)
+
+## Check for multicollinearity
+collinear <- usdm::vifcor(allClimDF[,-ncol(allClimDF)])
+selectVars <-  collinear@results$Variables
+
+colinearVariables <- climateRasters[[selectVars]]
+```
+
+### One level of abstraction
+```{r  eval = F}
+sp1 <- assignSpatialCoordinates(sp1)
+
+allClimDF <- getClimateDataframe(sp1)
+
+selectVars <- findCollinear(allClimDF)
+
+collinearVariables <- climateRasters[[selectedVars]] 
+```
+
+
+### Second level of abstraction
+```{r  eval = F}
+selectedVars <- findCollinearVariables(sp1, climateRasters)
+collinearVariables <- climateRasters[[selectedVars]] 
+```
