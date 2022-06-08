@@ -43,3 +43,22 @@ collinearVariables <- climateRasters[[selectedVars]]
 selectedVars <- findCollinearVariables(sp1, climateRasters)
 collinearVariables <- climateRasters[[selectedVars]] 
 ```
+
+
+### New Abstraction version
+```{r  eval = F}
+install.packages("palmerpenguins")
+head(penguins)
+penguins <- data.frame(penguins)
+
+## Data cleaning
+penguinsNAremoved <- penguins[!is.na(penguins$bill_length_mm),]
+penguinsNADupsRemoved <- penguinsNAremoved[!duplicated(penguinsNAremoved),]
+
+## Check for multicollinearity
+collinear <- usdm::vifcor(penguinsNADupsRemoved[,c("bill_length_mm","bill_depth_mm","flipper_length_mm","body_mass_g")])
+removeVariables <-  collinear@excluded
+removeVariables <- "bill_length_mm"
+penguinsNADupsCollinRemoved <- subset(penguinsNADupsRemoved, select=-c(bill_length_mm))
+
+```
