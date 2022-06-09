@@ -47,18 +47,31 @@ collinearVariables <- climateRasters[[selectedVars]]
 
 ### New Abstraction version
 ```{r  eval = F}
-install.packages("palmerpenguins")
-head(penguins)
-penguins <- data.frame(penguins)
+library(raster)
+
+## Data load
+speciesOccurrences <- readOGR("occurrence_points.shp")
+speciesAbsences <- readOGR("absence_points.shp")
+climateData <- stack("./climateData.tif")
+
+## Climate extraction
+occurenceClimate <- extract(climateData, speciesOccurrences)
+absenceClimate <- extract(climateData, speciesAbsences)
+allClimate <- rbind(occurenceClimate, absenceClimate)
+allClimate[,"speciesRecord"] <- c(rep(1, nrow(occurenceClimate)),rep(0, nrow(occurenceClimate)))
 
 ## Data cleaning
-penguinsNAremoved <- penguins[!is.na(penguins$bill_length_mm),]
-penguinsNADupsRemoved <- penguinsNAremoved[!duplicated(penguinsNAremoved),]
+allClimateNAremoved <- allClimate[complete.cases(allClimate),]
+allClimateNADupsremoved <- allClimateNAremoved[!duplicated(allClimateNAremoved),]
 
 ## Check for multicollinearity
-collinear <- usdm::vifcor(penguinsNADupsRemoved[,c("bill_length_mm","bill_depth_mm","flipper_length_mm","body_mass_g")])
+collinear <- usdm::vifcor(allClimateNADupsremoved[-ncol(allClimateNADupsremoved)])
 removeVariables <-  collinear@excluded
-removeVariables <- "bill_length_mm"
-penguinsNADupsCollinRemoved <- subset(penguinsNADupsRemoved, select=-c(bill_length_mm))
+allClimateModelReady <-  allClimateNADupsremoved[!names(allClimateNADupsremoved) %in% removeVariables]
+
+## Run logistic regression
+model <- glm(speciesRecord ~ ., data = allClimateModelReady, family = binomial)
+
+
 
 ```
