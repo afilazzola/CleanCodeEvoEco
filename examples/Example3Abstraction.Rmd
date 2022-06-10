@@ -4,48 +4,7 @@ output:
   pdf_document: default
   word_document: default
 ---
-## Example3abstraction
-
-
-
-### Original
-```{r eval = F}
-## Assign spatial coordinates
-coordinates(sp1) <- ~decimalLongitude + decimalLatitude ## Transform occurrences to spdataframe
-proj4string(sp1) <- CRS("+proj=longlat +datum=WGS84")
-sp1 <- spTransform(sp1, crs(climateRasters))
-
-## Extract climate data
-allClim <- extract(climateRasters, sp1)
-allClimDF <- data.frame(allClim)
-
-## Check for multicollinearity
-collinear <- usdm::vifcor(allClimDF[,-ncol(allClimDF)])
-selectVars <-  collinear@results$Variables
-
-colinearVariables <- climateRasters[[selectVars]]
-```
-
-### One level of abstraction
-```{r  eval = F}
-sp1 <- assignSpatialCoordinates(sp1)
-
-allClimDF <- getClimateDataframe(sp1)
-
-selectVars <- findCollinear(allClimDF)
-
-collinearVariables <- climateRasters[[selectedVars]] 
-```
-
-
-### Second level of abstraction
-```{r  eval = F}
-selectedVars <- findCollinearVariables(sp1, climateRasters)
-collinearVariables <- climateRasters[[selectedVars]] 
-```
-
-
-### New Abstraction version
+### Data load
 ```{r  eval = F}
 library(terra)
 
@@ -53,7 +12,10 @@ library(terra)
 speciesOccurrences <- vect("occurrence_points.shp")
 speciesAbsences <- vect("absence_points.shp")
 climateData <- rast("./climateData.tif")
+```
 
+### Original Code
+```{r` eval = F}
 ## Climate extraction
 occurenceClimate <- extract(climateData, speciesOccurrences)
 absenceClimate <- extract(climateData, speciesAbsences)
@@ -72,8 +34,6 @@ allClimateModelReady <-  allClimateNADupsremoved[!names(allClimateNADupsremoved)
 ## Run logistic regression
 modelOut <- glm(speciesRecord ~ ., data = allClimateModelReady, family = binomial)
 summary(modelOut)
-
-
 ```
 
 ### One level of Abstraction
