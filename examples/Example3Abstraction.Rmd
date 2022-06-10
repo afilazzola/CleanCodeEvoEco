@@ -47,12 +47,12 @@ collinearVariables <- climateRasters[[selectedVars]]
 
 ### New Abstraction version
 ```{r  eval = F}
-library(raster)
+library(terra)
 
 ## Data load
-speciesOccurrences <- readOGR("occurrence_points.shp")
-speciesAbsences <- readOGR("absence_points.shp")
-climateData <- stack("./climateData.tif")
+speciesOccurrences <- vect("occurrence_points.shp")
+speciesAbsences <- vect("absence_points.shp")
+climateData <- rast("./climateData.tif")
 
 ## Climate extraction
 occurenceClimate <- extract(climateData, speciesOccurrences)
@@ -70,8 +70,61 @@ removeVariables <-  collinear@excluded
 allClimateModelReady <-  allClimateNADupsremoved[!names(allClimateNADupsremoved) %in% removeVariables]
 
 ## Run logistic regression
-model <- glm(speciesRecord ~ ., data = allClimateModelReady, family = binomial)
+modelOut <- glm(speciesRecord ~ ., data = allClimateModelReady, family = binomial)
+summary(modelOut)
 
 
+```
 
+### One level of Abstraction
+```{r  eval = F}
+extractClimateFromPoints <- function(occ, abs, climate) {
+occurenceClimate <- extract(climate, occ)
+absenceClimate <- extract(climate, abs)
+climateDF <- rbind(occurenceClimate, absenceClimate)
+climateDF[,"speciesRecord"] <- c(rep(1, nrow(occurenceClimate)),rep(0, nrow(occurenceClimate)))
+return(climateDF)
+}
+
+cleanRecords <- function(climateDF) {
+climateDF <- climateDF[complete.cases(climateDF),] 
+climateDF <- climateDF[!duplicated(climateDF),]
+return(climateDF)
+} 
+
+checkCollinear <- function(climateDF) {
+collinear <- usdm::vifcor(climateDF[-ncol(climateDF)])
+removeVariables <-  collinear@excluded
+climateVariables <- climateDF[!names(climateDF) %in% removeVariables,]
+return(climateVariables)
+}
+
+climateLogisticRegression <- function(processedClimateDF) {
+model <- glm(speciesRecord ~ ., data = processedClimateDF, family = binomial)
+print(summary(model))
+return(model)
+}
+
+allClimate <- extractClimateFromPoints(speciesOccurrences, speciesAbsences, climateData)
+
+allClimateNADupsremoved <- cleanRecords(allClimate)
+
+allClimateModelReady <- checkCollinear(allClimateNADupsremoved)
+
+modelOut <- climateLogisticRegression(allClimateModelReady)
+
+```
+
+### Second level of abstraction
+```{r  eval = F}
+
+runClimateLogisticRegression <- function(occ, abs, climate) {
+allClimate <- extractClimateFromPoints(speciesOccurrences, speciesAbsences, climateData)
+allClimateNADupsremoved <- cleanRecords(allClimate)
+allClimateModelReady <- checkCollinear(allClimateNADupsremoved)
+climateLogisticRegression(allClimateModelReady)
+return(climateLogisticRegression)
+}
+
+runClimateLogisticRegression(speciesOccurrences, speciesAbsences, climateData)
 ```
