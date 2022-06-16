@@ -7,6 +7,7 @@ output:
 ### Data load
 ```{r  eval = F}
 library(terra)
+library(usdm)
 
 ## Data load
 speciesOccurrences <- vect("occurrence_points.shp")
@@ -14,8 +15,8 @@ speciesAbsences <- vect("absence_points.shp")
 climateData <- rast("./climateData.tif")
 ```
 
-### Original Code
-```{r` eval = F}
+### Original code
+```{r eval = F}
 ## Climate extraction
 occurenceClimate <- extract(climateData, speciesOccurrences)
 absenceClimate <- extract(climateData, speciesAbsences)
@@ -27,7 +28,7 @@ allClimateNAremoved <- allClimate[complete.cases(allClimate),]
 allClimateNADupsremoved <- allClimateNAremoved[!duplicated(allClimateNAremoved),]
 
 ## Check for multicollinearity
-collinear <- usdm::vifcor(allClimateNADupsremoved[-ncol(allClimateNADupsremoved)])
+collinear <- vifcor(allClimateNADupsremoved[-ncol(allClimateNADupsremoved)])
 removeVariables <-  collinear@excluded
 allClimateModelReady <-  allClimateNADupsremoved[!names(allClimateNADupsremoved) %in% removeVariables]
 
@@ -36,7 +37,7 @@ modelOut <- glm(speciesRecord ~ ., data = allClimateModelReady, family = binomia
 summary(modelOut)
 ```
 
-### One level of Abstraction
+### First level of abstraction
 ```{r  eval = F}
 extractClimateFromPoints <- function(occ, abs, climate) {
 occurenceClimate <- extract(climate, occ)
@@ -53,7 +54,7 @@ return(climateDF)
 } 
 
 checkCollinear <- function(climateDF) {
-collinear <- usdm::vifcor(climateDF[-ncol(climateDF)])
+collinear <- vifcor(climateDF[-ncol(climateDF)])
 removeVariables <-  collinear@excluded
 climateVariables <- climateDF[!names(climateDF) %in% removeVariables,]
 return(climateVariables)
