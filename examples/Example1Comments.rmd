@@ -12,10 +12,11 @@ output:
 
 lmFun <- function(){
 m1 <- lm(weight ~ group, ## response ~ predictor
-         data = PlantGrowth) ## specify dataframe
-# shapiro.test(m1$residuals) ## check normality of response. Model = Normal
-anovaTable <- anova(m1) ## get ANOVA Table from model
-return(anovaTable)
+           data = PlantGrowth) ## specify dataframe
+  ## checked normality of response. Model = Normal
+  ## shapiro.test(m1$residuals) 
+  anovaTable <- anova(m1) ## get ANOVA Table from model
+  return(anovaTable)
 }
 lmFun()
 
@@ -26,9 +27,9 @@ lmFun()
 
 lmComparePlantGrowth <- function(){
 m1 <- lm(weight ~ group, 
-         data = PlantGrowth)
-anovaTable <- anova(m1)
-return(anovaTable)
+           data = PlantGrowth)
+  anovaTable <- anova(m1)
+  return(anovaTable)
 }
 
 lmComparePlantGrowth()
