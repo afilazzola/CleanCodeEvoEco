@@ -1,6 +1,7 @@
 ---
 title: "Examples of clean code for computational biologists"
-output: html_document
+output:
+  html_document: default
 ---
 
 
@@ -37,10 +38,10 @@ lmComparePlantGrowth()
 
 ```
 
-### Example 1 - Formatting
+### Example 2 - Formatting
 
 #### Original Script
-```{python eval = FALSE}
+```{python eval = FALSE, python.reticulate = F}
 headerCols = ["gbifID","datasetKey","occurrenceID","kingdom","phylum","class","species","latitude","longitude"]
 
 for i in csvFiles:
@@ -56,7 +57,7 @@ for i in csvFiles:
 ```
 
 #### Revised Script
-```{python eval = FALSE}
+```{python eval = FALSE , python.reticulate = F}
 headerCols = ["gbifID", "datasetKey", "occurrenceID", "kingdom", "phylum",
   "class", "species", "latitude", "longitude"]
 
@@ -91,39 +92,88 @@ for i in csvFiles:
 
 ### Example 3 - Abstraction
 
+#### Data load
+```{r  eval = F}
+library(terra)
+library(usdm)
 
-#### Original
+## Data load
+speciesOccurrences <- vect("occurrence_points.shp")
+speciesAbsences <- vect("absence_points.shp")
+climateData <- rast("./climateData.tif")
+```
+
+#### Original code
 ```{r eval = F}
-## Assign spatial coordinates
-coordinates(sp1) <- ~decimalLongitude + decimalLatitude ## Transform occurrences to spdataframe
-proj4string(sp1) <- CRS("+proj=longlat +datum=WGS84")
-sp1 <- spTransform(sp1, crs(climateRasters))
+## Climate extraction
+occurenceClimate <- extract(climateData, speciesOccurrences)
+absenceClimate <- extract(climateData, speciesAbsences)
+allClimate <- rbind(occurenceClimate, absenceClimate)
+allClimate[,"speciesRecord"] <- c(rep(1, nrow(occurenceClimate)),rep(0, nrow(occurenceClimate)))
 
-## Extract climate data
-allClim <- extract(climateRasters, sp1)
-allClimDF <- data.frame(allClim)
+## Data cleaning
+allClimateNAremoved <- allClimate[complete.cases(allClimate),]
+allClimateNADupsremoved <- allClimateNAremoved[!duplicated(allClimateNAremoved),]
 
 ## Check for multicollinearity
-collinear <- usdm::vifcor(allClimDF[,-ncol(allClimDF)])
-selectVars <-  collinear@results$Variables
+collinear <- vifcor(allClimateNADupsremoved[-ncol(allClimateNADupsremoved)])
+removeVariables <-  collinear@excluded
+allClimateModelReady <-  allClimateNADupsremoved[!names(allClimateNADupsremoved) %in% removeVariables]
 
-colinearVariables <- climateRasters[[selectVars]]
+## Run logistic regression
+modelOut <- glm(speciesRecord ~ ., data = allClimateModelReady, family = binomial)
+summary(modelOut)
 ```
 
-#### One level of abstraction
+#### First level of abstraction
 ```{r  eval = F}
-sp1 <- assignSpatialCoordinates(sp1)
+extractClimateFromPoints <- function(occ, abs, climate) {
+occurenceClimate <- extract(climate, occ)
+absenceClimate <- extract(climate, abs)
+climateDF <- rbind(occurenceClimate, absenceClimate)
+climateDF[,"speciesRecord"] <- c(rep(1, nrow(occurenceClimate)),rep(0, nrow(occurenceClimate)))
+return(climateDF)
+}
 
-allClimDF <- getClimateDataframe(sp1)
+cleanRecords <- function(climateDF) {
+climateDF <- climateDF[complete.cases(climateDF),] 
+climateDF <- climateDF[!duplicated(climateDF),]
+return(climateDF)
+} 
 
-selectVars <- findCollinear(allClimDF)
+checkCollinear <- function(climateDF) {
+collinear <- vifcor(climateDF[-ncol(climateDF)])
+removeVariables <-  collinear@excluded
+climateVariables <- climateDF[!names(climateDF) %in% removeVariables,]
+return(climateVariables)
+}
 
-collinearVariables <- climateRasters[[selectedVars]] 
+climateLogisticRegression <- function(processedClimateDF) {
+model <- glm(speciesRecord ~ ., data = processedClimateDF, family = binomial)
+print(summary(model))
+return(model)
+}
+
+allClimate <- extractClimateFromPoints(speciesOccurrences, speciesAbsences, climateData)
+
+allClimateNADupsremoved <- cleanRecords(allClimate)
+
+allClimateModelReady <- checkCollinear(allClimateNADupsremoved)
+
+modelOut <- climateLogisticRegression(allClimateModelReady)
+
 ```
-
 
 #### Second level of abstraction
 ```{r  eval = F}
-selectedVars <- findCollinearVariables(sp1, climateRasters)
-collinearVariables <- climateRasters[[selectedVars]] 
+
+runClimateLogisticRegression <- function(occ, abs, climate) {
+allClimate <- extractClimateFromPoints(speciesOccurrences, speciesAbsences, climateData)
+allClimateNADupsremoved <- cleanRecords(allClimate)
+allClimateModelReady <- checkCollinear(allClimateNADupsremoved)
+climateLogisticRegression(allClimateModelReady)
+return(climateLogisticRegression)
+}
+
+runClimateLogisticRegression(speciesOccurrences, speciesAbsences, climateData)
 ```
